@@ -22,7 +22,7 @@ def optimizer_select(model, args):
     elif args.optimizer == 'Adam':
         optimizer = optim.Adam(optimizer_grouped_parameters, lr=args.lr, eps=1e-8)
     elif args.optimizer == 'AdamW':
-        optimizer = optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, eps=1e-8)
+        optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, eps=1e-8)
     elif args.optimizer == 'Ralamb':
         optimizer = Ralamb(optimizer_grouped_parameters, lr=args.lr)
     else:
