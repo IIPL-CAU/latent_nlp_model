@@ -1,5 +1,5 @@
 import argparse
-from transformers import  BertTokenizer, BartTokenizer, T5Tokenizer
+from transformers import  BertTokenizer, BartTokenizerFast, T5Tokenizer
 
 from datasets import load_dataset
 
@@ -28,11 +28,11 @@ def plm_tokenizing(sequence_dict: dict, args: argparse.Namespace,
             raise Exception(f'{language} language does not support')
     elif args.tokenizer == 'bart':
         if language == 'en':
-            tokenizer = BartTokenizer.from_pretrained('facebook/bart-base')
+            tokenizer = BartTokenizerFast.from_pretrained('ainize/bart-base-cnn')
         elif language =='kr':
-            tokenizer = BartTokenizer.from_pretrained('cosmoquester/bart-ko-mini')
+            tokenizer = BartTokenizerFast.from_pretrained('cosmoquester/bart-ko-mini')
         elif language == 'de':
-            tokenizer = BartTokenizer.from_pretrained('Shahm/bart-german')
+            tokenizer = BartTokenizerFast.from_pretrained('Shahm/bart-german')
         else:
             raise Exception(f'{language} language does not support')
     elif args.tokenizer == 'T5':

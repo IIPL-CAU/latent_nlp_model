@@ -269,9 +269,10 @@ def seq2seq_training(args):
                                                      non_pad_position=non_pad, tgt_subsqeunt_mask=tgt_subsqeunt_mask)
                         if args.task in ['translation', 'style_transfer', 'summarization', 'reconstruction']:
                             predicted = predicted.view(-1, predicted.size(-1))
-                            loss = label_smoothing_loss(predicted, trg_sequence_gold, 
-                                                        trg_pad_idx=model.pad_idx,
-                                                        smoothing_eps=args.label_smoothing_eps)
+                            # loss = label_smoothing_loss(predicted, trg_sequence_gold, 
+                            #                             trg_pad_idx=model.pad_idx,
+                            #                             smoothing_eps=args.label_smoothing_eps)
+                            loss = F.cross_entropy(predicted, trg_sequence_gold)
                         elif 'classification' in args.task: # Need to refactoring
                             loss = F.cross_entropy(predicted, trg_label)
                         total_loss = loss + dist_loss

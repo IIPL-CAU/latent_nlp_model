@@ -147,12 +147,13 @@ class custom_Bart(nn.Module):
 
         return model_out, dist_loss
 
-    def generate(self, src_input_ids, src_attention_mask, beam_size: int = 5, repetition_penalty: float = 0.7):
+    def generate(self, src_input_ids, src_attention_mask, beam_size: int = 5, beam_alpha: float = 0.7, repetition_penalty: float = 0.7):
 
         # Pre_setting
         device = src_input_ids.device
         batch_size = src_input_ids.size(0)
         src_seq_size = src_input_ids.size(1)
+        every_batch = torch.arange(0, beam_size * batch_size, beam_size, device=device)
 
         src_encoder_out = self.encoder_model(input_ids=src_input_ids,
                                              attention_mask=src_attention_mask)
@@ -160,23 +161,11 @@ class custom_Bart(nn.Module):
 
         src_encoder_out = src_encoder_out.transpose(0,1)
 
-        if self.variational_mode == 1:
-            z = self.latent_module.context_to_mu(src_encoder_out)
-            src_context = self.latent_module.z_to_context(z)
+        if self.variational:
+            # Tensor dimension transpose
+            src_encoder_out = src_encoder_out.transpose(0,1) # [seq_len, batch, d_model]
 
-            src_encoder_out = torch.add(src_encoder_out, src_context)
-
-        if self.variational_mode == 1:
-            z = self.latent_module.context_to_mu(src_encoder_out)
-            src_context = self.latent_module.z_to_context(z)
-
-            src_encoder_out = torch.add(src_encoder_out, src_context)
-
-        if self.variational_mode == 1:
-            z = self.latent_module.context_to_mu(src_encoder_out)
-            src_context = self.latent_module.z_to_context(z)
-
-            src_encoder_out = torch.add(src_encoder_out, src_context)
+            src_encoder_out = self.latent_module.generate(src_encoder_out)
 
         # Duplicate
         src_encoder_out = src_encoder_out.view(-1, batch_size, 1, self.d_hidden)
@@ -188,7 +177,7 @@ class custom_Bart(nn.Module):
         src_attention_mask = src_attention_mask.view(-1, src_seq_size)
 
         # Decoding start token setting
-        seqs = torch.tensor([[tokenizer.bos_token_id]], dtype=torch.long, device=device) 
+        seqs = torch.tensor([[self.bos_idx]], dtype=torch.long, device=device) 
         seqs = seqs.repeat(beam_size * batch_size, 1).contiguous() # (batch_size * k, 1)
 
         # Scores save vector & decoding list setting
@@ -198,10 +187,10 @@ class custom_Bart(nn.Module):
         complete_ind = set()
 
         for step in range(300):
-            model_out = model.decoder_model(input_ids = seqs, 
-                                        encoder_hidden_states = encoder_out,
-                                        encoder_attention_mask = src_att)
-            model_out = model.lm_head(model_out['last_hidden_state'])
+            model_out = self.decoder_model(input_ids = seqs, 
+                                           encoder_hidden_states = src_encoder_out,
+                                           encoder_attention_mask = src_attention_mask)
+            model_out = self.lm_head(model_out['last_hidden_state'])
 
             scores = model_out[:,-1,] # Last token
 
@@ -219,22 +208,22 @@ class custom_Bart(nn.Module):
 
             if step == 0:
                 scores = scores[::beam_size] # (batch_size, vocab_num)
-                scores[:, model.eos_idx] = float('-inf') # set eos token probability zero in first step
+                scores[:, self.eos_idx] = float('-inf') # set eos token probability zero in first step
                 top_k_scores, top_k_words = scores.topk(beam_size, 1, True, True)  # (batch_size, k) , (batch_size, k)
             else:
                 top_k_scores, top_k_words = scores.view(batch_size, -1).topk(beam_size, 1, True, True)
 
             # Previous and Next word extract
-            prev_word_inds = top_k_words // trg_vocab_num # (batch_size * k, out_seq)
-            next_word_inds = top_k_words % trg_vocab_num # (batch_size * k, out_seq)
+            prev_word_inds = top_k_words // self.model_config.vocab_size # (batch_size * k, out_seq)
+            next_word_inds = top_k_words % self.model_config.vocab_size # (batch_size * k, out_seq)
             top_k_scores = top_k_scores.view(batch_size * beam_size, -1) # (batch_size * k, out_seq)
             top_k_words = top_k_words.view(batch_size * beam_size, -1) # (batch_size * k, out_seq)
             seqs = seqs[prev_word_inds.view(-1) + every_batch.unsqueeze(1).repeat(1, beam_size).view(-1)] # (batch_size * k, out_seq)
             seqs = torch.cat([seqs, next_word_inds.view(beam_size * batch_size, -1)], dim=1) # (batch_size * k, out_seq + 1)
 
             # Find and Save Complete Sequences Score
-            if model.eos_idx in next_word_inds:
-                eos_ind = torch.where(next_word_inds.view(-1) == model.eos_idx)
+            if self.eos_idx in next_word_inds:
+                eos_ind = torch.where(next_word_inds.view(-1) == self.eos_idx)
                 eos_ind = eos_ind[0].tolist()
                 complete_ind_add = set(eos_ind) - complete_ind
                 complete_ind_add = list(complete_ind_add)
@@ -257,7 +246,7 @@ class custom_Bart(nn.Module):
         scores_save = scores_save / lp
 
         # Predicted and Label processing
-        _, ind = scores_save.view(batch_size, args.beam_size, -1).max(1)
+        _, ind = scores_save.view(batch_size, beam_size, -1).max(1)
         predicted = ind.view(-1) + every_batch
         
         return predicted
