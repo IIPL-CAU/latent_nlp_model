@@ -63,64 +63,64 @@ class MaximumMeanDiscrepancyLoss(nn.Module):
 
         return out
 
-class MaximumMeanDiscrepancyLoss3(nn.Module):
-    def __init__(self):
-        super(MaximumMeanDiscrepancyLoss3, self).__init__()
+# class MaximumMeanDiscrepancyLoss3(nn.Module):
+#     def __init__(self):
+#         super(MaximumMeanDiscrepancyLoss3, self).__init__()
 
-    def forward(self, x, y, z_var):
-        batch_size = x.size(0)
-        xx, yy, zz = torch.mm(x,x.t()), torch.mm(y,y.t()), torch.mm(x,y.t())
+#     def forward(self, x, y, z_var):
+#         batch_size = x.size(0)
+#         xx, yy, zz = torch.mm(x,x.t()), torch.mm(y,y.t()), torch.mm(x,y.t())
 
-        rx = (xx.diag().unsqueeze(0).expand_as(xx))
-        ry = (yy.diag().unsqueeze(0).expand_as(yy))
+#         rx = (xx.diag().unsqueeze(0).expand_as(xx))
+#         ry = (yy.diag().unsqueeze(0).expand_as(yy))
 
-        K = torch.exp(- z_var * (rx.t() + rx - 2*xx))
-        L = torch.exp(- z_var * (ry.t() + ry - 2*yy))
-        P = torch.exp(- z_var * (rx.t() + ry - 2*zz))
+#         K = torch.exp(- z_var * (rx.t() + rx - 2*xx))
+#         L = torch.exp(- z_var * (ry.t() + ry - 2*yy))
+#         P = torch.exp(- z_var * (rx.t() + ry - 2*zz))
 
-        beta = (1./(batch_size*(batch_size-1)))
-        gamma = (2./(batch_size*batch_size)) 
+#         beta = (1./(batch_size*(batch_size-1)))
+#         gamma = (2./(batch_size*batch_size)) 
 
-        return torch.abs(beta * (torch.sum(K)+torch.sum(L)) - gamma * torch.sum(P))
+#         return torch.abs(beta * (torch.sum(K)+torch.sum(L)) - gamma * torch.sum(P))
 
-class MaximumMeanDiscrepancyLoss2(nn.Module):
-    def __init__(self, device):
-        super(MaximumMeanDiscrepancyLoss2, self).__init__()
-        self.kernel = 'multiscale'
-        self.device = device
+# class MaximumMeanDiscrepancyLoss2(nn.Module):
+#     def __init__(self, device):
+#         super(MaximumMeanDiscrepancyLoss2, self).__init__()
+#         self.kernel = 'multiscale'
+#         self.device = device
 
-    def forward(self, x, y, z_var):
-        xx, yy, zz = torch.mm(x, x.t()), torch.mm(y, y.t()), torch.mm(x, y.t())
+#     def forward(self, x, y, z_var):
+#         xx, yy, zz = torch.mm(x, x.t()), torch.mm(y, y.t()), torch.mm(x, y.t())
 
-        xx = xx.to(self.device)
-        yy = yy.to(self.device)
-        zz = zz.to(self.device)
+#         xx = xx.to(self.device)
+#         yy = yy.to(self.device)
+#         zz = zz.to(self.device)
 
-        rx = (xx.diag().unsqueeze(0).expand_as(xx))
-        ry = (yy.diag().unsqueeze(0).expand_as(yy))
+#         rx = (xx.diag().unsqueeze(0).expand_as(xx))
+#         ry = (yy.diag().unsqueeze(0).expand_as(yy))
         
-        dxx = rx.t() + rx - 2. * xx # Used for A in (1)
-        dyy = ry.t() + ry - 2. * yy # Used for B in (1)
-        dxy = rx.t() + ry - 2. * zz # Used for C in (1)
+#         dxx = rx.t() + rx - 2. * xx # Used for A in (1)
+#         dyy = ry.t() + ry - 2. * yy # Used for B in (1)
+#         dxy = rx.t() + ry - 2. * zz # Used for C in (1)
         
-        XX, YY, XY = (torch.zeros(xx.shape).to(self.device),
-                    torch.zeros(xx.shape).to(self.device),
-                    torch.zeros(xx.shape).to(self.device))
+#         XX, YY, XY = (torch.zeros(xx.shape).to(self.device),
+#                     torch.zeros(xx.shape).to(self.device),
+#                     torch.zeros(xx.shape).to(self.device))
         
-        if self.kernel == "multiscale":
+#         if self.kernel == "multiscale":
             
-            bandwidth_range = [0.2, 0.5, 0.9, 1.3]
-            for a in bandwidth_range:
-                XX += a**2 * (a**2 + dxx)**-1
-                YY += a**2 * (a**2 + dyy)**-1
-                XY += a**2 * (a**2 + dxy)**-1
+#             bandwidth_range = [0.2, 0.5, 0.9, 1.3]
+#             for a in bandwidth_range:
+#                 XX += a**2 * (a**2 + dxx)**-1
+#                 YY += a**2 * (a**2 + dyy)**-1
+#                 XY += a**2 * (a**2 + dxy)**-1
                 
-        if self.kernel == "rbf":\
+#         if self.kernel == "rbf":\
         
-            bandwidth_range = [10, 15, 20, 50]
-            for a in bandwidth_range:
-                XX += torch.exp(-0.5*dxx/a)
-                YY += torch.exp(-0.5*dyy/a)
-                XY += torch.exp(-0.5*dxy/a)
+#             bandwidth_range = [10, 15, 20, 50]
+#             for a in bandwidth_range:
+#                 XX += torch.exp(-0.5*dxx/a)
+#                 YY += torch.exp(-0.5*dyy/a)
+#                 XY += torch.exp(-0.5*dxy/a)
 
-        return torch.mean(XX + YY - 2. * XY)
+#         return torch.mean(XX + YY - 2. * XY)
