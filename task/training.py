@@ -26,7 +26,7 @@ from optimizer.utils import shceduler_select, optimizer_select
 from utils import TqdmLoggingHandler, write_log, get_tb_exp_name
 from task.utils import input_to_device, label_smoothing_loss, model_save_name
 
-def seq2seq_training(args):
+def training(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     #===================================#

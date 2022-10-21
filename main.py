@@ -4,8 +4,7 @@ import argparse
 # Import custom modules
 from task.preprocessing.data_preprocessing import data_preprocessing, benchmark_preprocessing
 from task.preprocessing.topic_modeling import topic_modeling
-from task.training.seq2label_training import seq2label_training
-from task.training.seq2seq_training import seq2seq_training
+from task.training import training
 from task.testing.seq2seq_testing import seq2seq_testing
 # Utils
 from utils import str2bool, path_check, set_random_seed
@@ -32,11 +31,7 @@ def main(args):
         topic_modeling(args)
 
     if args.training:
-        if args.task in ['translation', 'style_transfer', 'reconstruction', 'summarization', 'multi-modal_classification']:
-            seq2seq_training(args)
-
-        if args.task in ['classification']:
-            seq2label_training(args)
+        training(args)
 
     if args.testing:
         if args.task in ['translation', 'style_transfer', 'reconstruction', 'summarization']:
