@@ -34,6 +34,7 @@ class Transformer(nn.Module):
         self.d_model = d_model
         self.src_max_len = src_max_len
         self.trg_max_len = trg_max_len
+        self.variational = variational
         self.src_vocab_num = src_vocab_num
         self.trg_vocab_num = trg_vocab_num
 
@@ -102,8 +103,8 @@ class Transformer(nn.Module):
             assert src_vocab_num == trg_vocab_num
             self.src_embedding.token.weight = self.trg_embedding.token.weight
             
-    def forward(self, src_input_ids, src_attention_mask,
-                trg_input_ids, trg_attention_mask,
+    def forward(self, src_input_ids, src_attention_mask, src_img,
+                trg_label, trg_input_ids, trg_attention_mask,
                 non_pad_position=None, tgt_subsqeunt_mask=None):
 
         # Pre_setting for variational model and translation task
