@@ -97,11 +97,11 @@ if __name__=='__main__':
                         help='Use source and target tokenizer same; Default is False')
     # Topic-modeling setting
     parser.add_argument('--topic_modeling_model', default='ctm', type=str,
-                        help='')
+                        help='Topic Modeling method select; Default is ctm')
     parser.add_argument('--n_components', default=10, type=int,
-                        help='')
+                        help='Topic component count; Default is 10')
     parser.add_argument('--topic_epochs', default=10, type=int,
-                        help='')
+                        help='Topic Modeling epoch setting; Default is 10')
     parser.add_argument('--umap_n_neighbors', default=15, type=int,
                         help='')
     parser.add_argument('--umap_n_components', default=5, type=int,
