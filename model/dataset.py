@@ -4,13 +4,6 @@ from torch.utils.data.dataset import Dataset
 import albumentations as A
 from skimage import io
 
-# class CustomDataset(Dataset):
-#     def __init__(self, task: str, src_list: list, src_att_list: list, src_img_path: list = None,
-#                  trg_list: list = None, trg_att_list: list = None,
-#                  min_len: int = 4, src_max_len: int = 300, 
-#                  pad_idx: int = 0, eos_idx: int = 2,
-#                  image_transform: A.core.composition.Compose = None):
-
 class Seq2SeqDataset(Dataset):
     def __init__(self, src_list: list, src_att_list: list, src_img_path: list = None,
                  trg_list: list = None, trg_att_list: list = None,
