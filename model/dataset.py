@@ -35,7 +35,7 @@ class Seq2SeqDataset(Dataset):
 class Seq2LabelDataset(Dataset):
     def __init__(self, src_list: list, src_att_list: list, src_img_path: list = None,
                  trg_list: list = None, trg_att_list: list = None,
-                 min_len: int = 4, src_max_len: int = 300, 
+                 min_len: int = 4, src_max_len: int = 300, trg_max_len: int = None,
                  pad_idx: int = 0, eos_idx: int = 2,
                  image_transform: A.core.composition.Compose = None):
         self.tensor_list = []

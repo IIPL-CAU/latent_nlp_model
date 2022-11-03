@@ -68,14 +68,21 @@ class custom_Bert(nn.Module):
 
         # Embedding
         txt_embed = self.txt_embedding(src_input_ids)
-        img_embed = self.img_embedding(src_img)
-        encoder_out = torch.cat((img_embed, txt_embed), axis=1)
+        if self.task == 'multi-modal_classification':
+            img_embed = self.img_embedding(src_img)
+            encoder_out = torch.cat((img_embed, txt_embed), axis=1)
+        else:
+            encoder_out = txt_embed
 
         # Attention mask processing
-        img_attention_mask = torch.ones(src_input_ids.size(0), 197, dtype=torch.long, device=src_attention_mask.device) # vit-226's patch length is 197
-        src_attention_mask = torch.cat((img_attention_mask, src_attention_mask), axis=1)
-        new_attention_mask = self.txt_model.get_extended_attention_mask(src_attention_mask, 
-                                                                        src_attention_mask.shape, src_attention_mask.device)
+        if self.task == 'multi-modal_classification':
+            img_attention_mask = torch.ones(src_input_ids.size(0), 197, dtype=torch.long, device=src_attention_mask.device) # vit-226's patch length is 197
+            src_attention_mask = torch.cat((img_attention_mask, src_attention_mask), axis=1)
+            new_attention_mask = self.txt_model.get_extended_attention_mask(src_attention_mask, 
+                                                                            src_attention_mask.shape, src_attention_mask.device)
+        else:
+            new_attention_mask = self.txt_model.get_extended_attention_mask(src_attention_mask, 
+                                                                            src_attention_mask.shape, src_attention_mask.device)
 
         encoder_out = self.encoder(hidden_states=encoder_out, 
                                    attention_mask=new_attention_mask)[0]
