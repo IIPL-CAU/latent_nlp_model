@@ -14,7 +14,7 @@ class custom_Bart(nn.Module):
                  src_language: str = 'en', trg_language: str = 'en',
                  variational: bool = True, variational_mode_dict: dict = dict(),
                  src_max_len: int = 768, trg_max_len: int = 300,
-                 emb_src_trg_weight_sharing: bool = True):
+                 emb_src_trg_weight_sharing: bool = True, dropout: float = 0.2):
         super().__init__()
 
         """
@@ -35,7 +35,7 @@ class custom_Bart(nn.Module):
         self.src_language = src_language
         self.trg_language = trg_language
         self.emb_src_trg_weight_sharing = emb_src_trg_weight_sharing
-        self.model_config = BartConfig.from_pretrained(f'ainize/bart-base-cnn')
+        self.model_config = BartConfig.from_pretrained(('facebook/bart-large'))
         # self.model_config.use_cache = False
 
         # Token index
@@ -44,7 +44,7 @@ class custom_Bart(nn.Module):
         self.eos_idx = self.model_config.eos_token_id
 
         if self.isPreTrain:
-            self.model = BartModel.from_pretrained(f'ainize/bart-base-cnn')
+            self.model = BartModel.from_pretrained(('facebook/bart-large'))
         else:
             self.model = BartModel(config=self.model_config)
 
@@ -55,7 +55,11 @@ class custom_Bart(nn.Module):
         # Dimension setting
         self.d_hidden = self.encoder_model.embed_tokens.embedding_dim
         # Language model head setting
-        self.lm_head = nn.Linear(self.model_config.d_model, self.model.shared.num_embeddings, bias=False)
+        self.dropout = nn.Dropout(dropout)
+        # Target linear part
+        self.trg_output_linear = nn.Linear(self.model_config.d_model, 256)
+        self.trg_output_norm = nn.LayerNorm(256, eps=1e-12)
+        self.trg_output_linear2 = nn.Linear(256, self.model.shared.num_embeddings)
 
         # Variational mode setting
         if variational:
@@ -135,12 +139,12 @@ class custom_Bart(nn.Module):
             model_out = self.decoder_model(inputs_embeds = trg_input_embeds, 
                                            encoder_hidden_states = src_encoder_out,
                                            encoder_attention_mask = src_attention_mask)
-            model_out = self.lm_head(model_out['last_hidden_state'])
         else:
             model_out = self.decoder_model(input_ids = trg_input_ids, 
                                            encoder_hidden_states = src_encoder_out,
                                            encoder_attention_mask = src_attention_mask)
-            model_out = self.lm_head(model_out['last_hidden_state'])
+        model_out = self.dropout(F.gelu(self.trg_output_linear(model_out['last_hidden_state'])))
+        model_out = self.trg_output_linear2(self.trg_output_norm(model_out))
 
         if non_pad_position is not None:
             model_out = model_out[non_pad_position]

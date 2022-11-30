@@ -28,7 +28,7 @@ def plm_tokenizing(sequence_dict: dict, args: argparse.Namespace,
             raise Exception(f'{language} language does not support')
     elif args.tokenizer == 'bart':
         if language == 'en':
-            tokenizer = BartTokenizerFast.from_pretrained('ainize/bart-base-cnn')
+            tokenizer = BartTokenizerFast.from_pretrained('facebook/bart-large')
         elif language =='kr':
             tokenizer = BartTokenizerFast.from_pretrained('cosmoquester/bart-ko-mini')
         elif language == 'de':
